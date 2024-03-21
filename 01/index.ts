@@ -53,6 +53,7 @@ for (const row of data) {
     // a simple regex match is not enough, because of strings like this:
     // 5tg578fldlcxponefourtwonet ... the last number must be a "one", 
     // but string.match(regex) would return "two" as last number
+    // see https://stackoverflow.com/questions/20833295/how-can-i-match-overlapping-strings-with-regex
     while (numberOrString = regex.exec(row)) {
         matches.push(numberOrString[0]);
         regex.lastIndex = numberOrString.index + 1;
