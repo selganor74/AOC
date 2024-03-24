@@ -14,18 +14,25 @@
 import { data } from "./data";
 data.splice(0, 1);
 
-type SerialPosition = {
+type MayBeSerial = {
     isSerial?: boolean;
     row: number;
     start?: number;
     end?: number;
     serial?: number;
+    originalData?: string;
+}
+
+type SymbolPosition = {
+    row: number;
+    start?: number;
+    end?: number;
     symbol?: string;
     originalData?: string;
     serials?: number[];
 }
 
-function checkIfIsSerialAgainstSymbolsInRow(y: number, mayBeSerial: SerialPosition) {
+function checkIfIsSerialAgainstSymbolsInRow(y: number, mayBeSerial: MayBeSerial) {
     const symbolsInRow = symbolPositions[y];
     if (!symbolsInRow) return;
 
@@ -34,10 +41,10 @@ function checkIfIsSerialAgainstSymbolsInRow(y: number, mayBeSerial: SerialPositi
         if ((symbol.start! >= mayBeSerial.start! - 1) && (symbol.end! <= mayBeSerial.end! + 1)) {
             // console.log("setting isSerial to true");
             mayBeSerial.isSerial = true;
-            if (symbol.symbol === "*") {
-                symbol.serials = symbol.serials || [];
-                symbol.serials.push(mayBeSerial.serial!);
-            }
+
+            // we need this to identify the gears (part 2)
+            symbol.serials = symbol.serials || [];
+            symbol.serials.push(mayBeSerial.serial!);
         }
     }
 }
@@ -84,8 +91,8 @@ function extractSerialPositions(m2: RegExpMatchArray, y: number) {
     }
 }
 
-const serialRanges: { [id: number]: SerialPosition[] } = [];
-const symbolPositions: { [id: number]: SerialPosition[] } = [];
+const serialRanges: { [id: number]: MayBeSerial[] } = [];
+const symbolPositions: { [id: number]: SymbolPosition[] } = [];
 
 for (let y = 0; y < data.length; y++) {
     serialRanges[y] = [];
@@ -120,15 +127,15 @@ for (let y = 0; y < data.length; y++) {
     }
 }
 
-const trueSerials: SerialPosition[] = [];
+const trueSerials: MayBeSerial[] = [];
 for (const row in serialRanges) {
     trueSerials.push(...serialRanges[row]?.filter(mbs => mbs.isSerial && mbs.serial));
 }
 
-const gears: SerialPosition[] = [];
+const gears: SymbolPosition[] = [];
 for (const row in symbolPositions) {
     const symbolsInRow = symbolPositions[row];
-    gears.push(...symbolsInRow.filter(s => s.serials?.length === 2));
+    gears.push(...symbolsInRow.filter(s => s.symbol === "*" && s.serials?.length === 2));
 }
 
 const result1 = trueSerials.map(msb => msb.serial!).reduce((accumulated, current) => accumulated + current, 0);
