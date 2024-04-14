@@ -38,3 +38,17 @@ for (const seed of data.seeds) {
 }
 
 console.log("Result 1: ", lowestLocation);
+
+// Part 2
+lowestLocation = Number.MAX_SAFE_INTEGER;
+for(let idx = 0; idx < data.seeds.length; idx += 2) {
+    const rangeStart = data.seeds[idx];
+    const rangeLength = data.seeds[idx + 1];
+
+    for(let seed = rangeStart; seed < rangeStart + rangeLength; seed ++) {
+        const location = findLocation(seed);
+        lowestLocation = Math.min(lowestLocation, location);    
+    }
+}
+
+console.log("Result 2: ", lowestLocation);
