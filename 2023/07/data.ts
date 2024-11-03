@@ -1,5 +1,5 @@
 export const data = 
-//*
+/*
 `
 32T3K 765
 T55J5 684
@@ -8,7 +8,7 @@ KTJJT 220
 QQQJA 483
 `;
 //*/
-/*
+//*
 `
 94J8A 16
 JK59A 722

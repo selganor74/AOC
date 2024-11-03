@@ -108,26 +108,26 @@ function pointExtractor(hand: Hand): PointType {
 
 class CardIterator {
     private allKeys: string[] = Object.keys(Cards);
-    
+
     private _current: string | undefined = undefined;
     public get current(): string | undefined {
         return this._current;
     }
-    public getNext(): string | undefined { 
+    public getNext(): string | undefined {
         this._current = this.allKeys.shift();
         return this._current;
     }
 
-    public reset() { 
-        this.allKeys = Object.keys(Cards) 
+    public reset() {
+        this.allKeys = Object.keys(Cards)
         this._current = undefined;
     };
 }
 
 class Counter {
-    constructor(private ...iterators: CardIterator[]) {
-        
-        for(const iterator of iterators) {
+    constructor(private iterators: CardIterator[]) {
+
+        for (const iterator of iterators) {
             iterator.getNext();
         }
         iterators[0].reset();
@@ -135,10 +135,10 @@ class Counter {
 
     getNext(): string[] | undefined {
         let position = 0;
-        while(position < this.iterators.length) {
-            if(this.iterators[position].getNext())
+        while (position < this.iterators.length) {
+            if (this.iterators[position].getNext())
                 break;
-            if (position === this.iterators.length -1)
+            if (position === this.iterators.length - 1)
                 return undefined;
 
             this.iterators[position].reset();
@@ -147,7 +147,7 @@ class Counter {
         }
 
         const toReturn: string[] = [];
-        for(const iterator of this.iterators) {
+        for (const iterator of this.iterators) {
             toReturn.push(iterator.current!);
         }
 
@@ -155,48 +155,88 @@ class Counter {
     }
 }
 
+function pointComparer(first: PointType, second: PointType) {
+    return first > second ? 1 : (second > first ? -1 : 0);
+}
+
 function pointExtractorP2(hand: Hand) {
+
+    function applyCombination(hand: Hand, jollies: number[], combination: string[]) {
+        let toReturn = hand;
+
+        jollies.map((p, i) => {
+            const pre = toReturn.substring(0, p);
+            const post = toReturn.substring(p + 1);
+            toReturn = pre + combination[i] + post;
+        });
+
+        // console.log("applied " + JSON.stringify(combination) + " to " + hand + " resulting in " + toReturn);
+
+        return toReturn;
+    }
+
     // The hand does not contain any J
     if (hand.indexOf("J") === -1)
         return pointExtractor(hand);
 
+    // console.log("looking for jollies...");
+    // Finds all the "J" (Jollies) in the hand
     const jollies = [];
-    let lastJolly = 0;
-    while (lastJolly = hand.indexOf("J", lastJolly)) {
+    let lastJolly = hand.indexOf("J");
+    while (lastJolly !== -1) {
         jollies.push(lastJolly);
+        lastJolly = hand.indexOf("J", lastJolly + 1);
+    }
+    // console.log("found " + jollies.length + " jollies at positions " + JSON.stringify(jollies));
+
+    // builds a counter for the number of joillies found
+    const iterators: CardIterator[] = jollies.map(p => new CardIterator());
+    const counter = new Counter(iterators);
+
+    let combination: string[] | undefined;
+    let maxPoint: PointType = PointType.HighCard;
+    while (combination = counter.getNext()) {
+        const handCombination = applyCombination(hand, jollies, combination);
+        const point = pointExtractor(handCombination);
+        if (pointComparer(point, maxPoint) === 1) {
+            maxPoint = point;
+            // console.log("found max point " + maxPoint + " for " + handCombination);
+        }
     }
 
-    const counter = (...iterators: CardIterator[]) {
-
-    }
+    return maxPoint;
 }
 
 /** returns 1 if first is greater, -1 if second is greater, 0 when equals */
-function handComparer(first: Hand, second: Hand): number {
-    const firstValue = handToNumber(first);
-    const secondValue = handToNumber(second);
+function handComparer(first: Hand, second: Hand, symbols: number = 13): number {
+    const firstValue = handToNumber(first, symbols);
+    const secondValue = handToNumber(second, symbols);
     return firstValue > secondValue ? 1 : (secondValue > firstValue ? -1 : 0);
 }
 
-function handToNumber(hand: Hand) {
+function handToNumber(hand: Hand, symbols: number) {
     let position = 4;
     let toReturn = 0;
+    // console.log("evaulating hand " + hand);
     for (const card of hand) {
-        const positionValue = Math.pow(13, position);
-        toReturn += positionValue * (<any>Cards)[card];
+        const positionValue = Math.pow(symbols, position);
+        const cardValue = (<any>Cards)[card];
+        toReturn += positionValue * cardValue;
+        // console.log("   position: " + position + " card: " + card + " cardValue: " + cardValue + " position value: " + positionValue);
         position--;
     }
+    // console.log("total: " + toReturn);
     return toReturn;
 }
 
-function groupByType(handList: BidList): GroupedByPointBidList {
+function groupByType(handList: BidList, pointExtractor: (hand: Hand) => PointType, symbols: number = 13): GroupedByPointBidList {
     const toReturn: GroupedByPointBidList = {};
 
     for (const hand of handList) {
         const point = pointExtractor(hand.hand);
         toReturn[point] = toReturn[point] || [];
         toReturn[point].push(hand);
-        toReturn[point].sort((a, b) => handComparer(a.hand, b.hand));
+        toReturn[point].sort((a, b) => handComparer(a.hand, b.hand, symbols));
     }
 
     return toReturn;
@@ -214,8 +254,23 @@ function getWinningPoints(groupedByType: GroupedByPointBidList): number {
     return winningPoints;
 }
 
+
 const handList = buildInput(data);
-const groupedByType = groupByType(handList);
+const groupedByType = groupByType(handList, pointExtractor);
 const winningPoints = getWinningPoints(groupedByType);
 
 console.log(winningPoints);
+
+Cards["J"] = 0;
+const groupedByTypeP2 = groupByType(handList, pointExtractorP2, 12);
+const winningPointsP2 = getWinningPoints(groupedByTypeP2);
+
+//console.log(groupedByTypeP2);
+console.log(winningPointsP2);
+// console.log(Cards);
+// console.log(pointExtractorP2("QJJAK"));
+
+// const counter = new Counter([new CardIterator(), new CardIterator(), new CardIterator()]);
+// let c: string[] | undefined = [];
+// while (c = counter.getNext())
+//     console.log(c);
