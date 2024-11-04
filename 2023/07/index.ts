@@ -17,19 +17,19 @@ type CardValues = {
 }
 
 const Cards: CardValues = {
-    "2": 0,
-    "3": 1,
-    "4": 2,
-    "5": 3,
-    "6": 4,
-    "7": 5,
-    "8": 6,
-    "9": 7,
-    "T": 8,
-    "J": 9,
-    "Q": 10,
-    "K": 11,
-    "A": 12
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4,
+    "6": 5,
+    "7": 6,
+    "8": 7,
+    "9": 8,
+    "T": 9,
+    "J": 10,
+    "Q": 11,
+    "K": 12,
+    "A": 13
 };
 
 enum PointType {
@@ -208,18 +208,18 @@ function pointExtractorP2(hand: Hand) {
 }
 
 /** returns 1 if first is greater, -1 if second is greater, 0 when equals */
-function handComparer(first: Hand, second: Hand, symbols: number = 13): number {
-    const firstValue = handToNumber(first, symbols);
-    const secondValue = handToNumber(second, symbols);
+function handComparer(first: Hand, second: Hand): number {
+    const firstValue = handToNumber(first);
+    const secondValue = handToNumber(second);
     return firstValue > secondValue ? 1 : (secondValue > firstValue ? -1 : 0);
 }
 
-function handToNumber(hand: Hand, symbols: number) {
+function handToNumber(hand: Hand) {
     let position = 4;
     let toReturn = 0;
     // console.log("evaulating hand " + hand);
     for (const card of hand) {
-        const positionValue = Math.pow(symbols, position);
+        const positionValue = Math.pow(14, position);
         const cardValue = (<any>Cards)[card];
         toReturn += positionValue * cardValue;
         // console.log("   position: " + position + " card: " + card + " cardValue: " + cardValue + " position value: " + positionValue);
@@ -229,14 +229,14 @@ function handToNumber(hand: Hand, symbols: number) {
     return toReturn;
 }
 
-function groupByType(handList: BidList, pointExtractor: (hand: Hand) => PointType, symbols: number = 13): GroupedByPointBidList {
+function groupByType(handList: BidList, pointExtractor: (hand: Hand) => PointType): GroupedByPointBidList {
     const toReturn: GroupedByPointBidList = {};
 
     for (const hand of handList) {
         const point = pointExtractor(hand.hand);
         toReturn[point] = toReturn[point] || [];
         toReturn[point].push(hand);
-        toReturn[point].sort((a, b) => handComparer(a.hand, b.hand, symbols));
+        toReturn[point].sort((a, b) => handComparer(a.hand, b.hand));
     }
 
     return toReturn;
@@ -261,16 +261,9 @@ const winningPoints = getWinningPoints(groupedByType);
 
 console.log(winningPoints);
 
+// J becomes a Jolly with value less than a 2
 Cards["J"] = 0;
-const groupedByTypeP2 = groupByType(handList, pointExtractorP2, 12);
+const groupedByTypeP2 = groupByType(handList, pointExtractorP2);
 const winningPointsP2 = getWinningPoints(groupedByTypeP2);
 
-//console.log(groupedByTypeP2);
 console.log(winningPointsP2);
-// console.log(Cards);
-// console.log(pointExtractorP2("QJJAK"));
-
-// const counter = new Counter([new CardIterator(), new CardIterator(), new CardIterator()]);
-// let c: string[] | undefined = [];
-// while (c = counter.getNext())
-//     console.log(c);
