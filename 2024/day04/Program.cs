@@ -30,7 +30,7 @@ for (int y = sizeY - 1; y > -sizeY; y--)
         if (x + y < sizeY && x + y >= 0)
         {
             currentUrDiagonal += rows[y + x][x];
-            currentUlDiagonal += rows[y + x][sizeX -1 - x];
+            currentUlDiagonal += rows[y + x][sizeX - 1 - x];
         }
     }
     upToRightDiagonals.Add(currentUrDiagonal);
@@ -62,3 +62,22 @@ foreach (var s in allStripes)
     part1 += partial;
 }
 Console.WriteLine($"part1: {part1}");
+
+
+int part2 = 0;
+for (var x = 1; x < sizeX - 1; x++)
+{
+    for (var y = 1; y < sizeY - 1; y++)
+    {
+        //find all "A"s (the center of the X-MAS)
+        if (rows[y][x] != 'A') continue;
+        string utr = rows[y - 1][x - 1] + "A" + rows[y + 1][x + 1];
+        string utl = rows[y - 1][x + 1] + "A" + rows[y + 1][x - 1];
+        if ((utr == "MAS" || utr == "SAM") && (utl == "MAS" || utl == "SAM"))
+        {
+            part2++;
+        }
+    }
+}
+
+Console.WriteLine($"Part2: {part2}");
