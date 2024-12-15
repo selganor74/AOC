@@ -3,12 +3,13 @@
 var lines = File.ReadAllLines("input.txt");
 var reports = lines.Select(x => x.Split(' ').Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => int.Parse(v)).ToList());
 
-var part1 = reports.Where(report =>
+static bool IsValidReport(List<int> report)
 {
     var isFirst = true;
     var isThirdOrMore = false;
     int prevLevel = 0;
     int prevSign = 0;
+
     foreach (var level in report)
     {
         var step = Math.Abs(level - prevLevel);
@@ -29,7 +30,37 @@ var part1 = reports.Where(report =>
         prevLevel = level;
         isFirst = false;
     }
+
     return true;
-})
-.Count();
+}
+
+var part1 = reports.Where(IsValidReport).Count();
+
 Console.WriteLine($"Part1: {part1}");
+
+
+var part2 = reports
+    .Where(reportToPurge =>
+        {
+            // removes one level at a time from the report, and checks if the resulting value is valid
+            for (int levelToPurge = 0; levelToPurge < reportToPurge.Count; levelToPurge++)
+            {
+                var report = new List<int>();
+                for (var levelToAdd = 0; levelToAdd < reportToPurge.Count; levelToAdd++)
+                {
+                    if (levelToAdd == levelToPurge)
+                        continue;
+
+                    report.Add(reportToPurge[levelToAdd]);
+                }
+
+                if (IsValidReport(report))
+                    return true;
+            }
+
+            return false;
+        })
+    .Count();
+
+Console.WriteLine($"Part2: {part2}");
+
