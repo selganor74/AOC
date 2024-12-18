@@ -5,6 +5,7 @@ var sizeY = map.Length;
 
 var guard = new Guard();
 
+// Find the start position;
 var found = false;
 
 for (var y = 0; y < sizeY; y++)
@@ -21,21 +22,18 @@ for (var y = 0; y < sizeY; y++)
     if (found) break;
 }
 
-
+// while the guard walks, we count the number
+// of distinct cells walked and we look for 
+// potential loops
 var obstacles = new List<Vector?>();
+var obstacle = guard.SearchForLoops(map.CopyAndClean());
+if (obstacle is not null)
+    obstacles.Add(obstacle);
 while (guard.Advance(map))
 {
-    // Console.Clear();
-    // foreach (var row in map)
-    //     Console.WriteLine(row);
-    // Thread.Sleep(40);
-    // Console.ReadKey(true);
-    var obstacle = guard.SearchForLoops(map.CopyAndClean());
+    obstacle = guard.SearchForLoops(map.CopyAndClean());
     if (obstacle is not null)
-    {
-        if (!obstacles.Any(o => o == obstacle))
-            obstacles.Add(obstacle);
-    }
+        obstacles.Add(obstacle);
 }
 
 foreach (var row in map)
@@ -44,7 +42,7 @@ foreach (var row in map)
 var part1 = guard.DistinctCells;
 Console.WriteLine($"Part1: {part1}");
 
-Console.WriteLine($"Part2: {obstacles.Count()}");
+Console.WriteLine($"Part2: {obstacles.Distinct().Count()}");
 
 public record struct Vector(int x, int y)
 {
@@ -117,13 +115,10 @@ public class Guard
     {
         int toReturn = 1;
         if (GetValueFromMapRelative(map, v) == 'X')
-        {
             toReturn = 0;
-        }
-        // map[Y] = map[Y].Substring(0, X) + 'X' + map[Y].Substring(X + 1, map[Y].Length - X - 1);
+
         map.DrawChar(Position, 'X');
         Position += v;
-        // map[Y] = map[Y].Substring(0, X) + Direction + map[Y].Substring(X + 1, map[Y].Length - X - 1);
         map.DrawChar(Position, Direction);
         return toReturn;
     }
@@ -147,7 +142,6 @@ public class Guard
                 break;
         }
 
-        // map[Y] = map[Y].Substring(0, X) + Direction + map[Y].Substring(X + 1, map[Y].Length - X - 1);
         map.DrawChar(Position, Direction);
     }
 
@@ -165,7 +159,7 @@ public class Guard
         map.DrawChar(obstaclePos, '#');
 
         var steps = 0;
-        var MAX_STEPS = 16000;
+        var MAX_STEPS = 8192;
         var path = new List<string[]>() { map.Copy() };
         var positions = new List<Guard>() { newGuard.Copy() };
 
@@ -196,7 +190,6 @@ public class Guard
             }
             Console.WriteLine("Loop Length: " + positions.Count);
             Console.ReadKey(true);
-
         }
         return null;
     }
