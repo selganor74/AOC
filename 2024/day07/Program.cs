@@ -1,8 +1,7 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 var lines = File.ReadAllLines("input.txt");
-// th first element of each array in equations is the test value
+// the first element of each array in equations is the test value
 var equations = lines
     .Where(l => !string.IsNullOrWhiteSpace(l))
     .Select(l => l.Split(": "))
@@ -44,11 +43,10 @@ foreach (var eq in equations)
             }
         }
 
-
         if (result == eq[0])
         {
             resultingEquation += " = " + result;
-            Console.WriteLine(resultingEquation);
+            // Console.WriteLine(resultingEquation);
             part1 += result;
             break;
         }
@@ -93,7 +91,7 @@ foreach (var eq in equations)
         if (result == eq[0])
         {
             resultingEquation += " = " + result;
-            Console.WriteLine(resultingEquation);
+            // Console.WriteLine(resultingEquation);
             part2 += result;
             break;
         }
