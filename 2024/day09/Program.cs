@@ -21,46 +21,22 @@ void PackForPart2(List<DiskPosition> diskLayout)
             .Select(t => t as OccupiedByFile)
             .OrderBy(t => t!.Id)
             .Last()!.Id;
+
     for (var id = lastId; id >= 0; id--)
     {
         var fileLen = diskLayout
-            .Where(t => t is OccupiedByFile)
             .Select(t => t as OccupiedByFile)
-            .Where(t => t!.Id == id)
+            .Where(t => t is not null && t!.Id == id)
             .Count();
 
         var fileFirstPos = diskLayout
-            .Where(t => t is OccupiedByFile)
             .Select(t => t as OccupiedByFile)
-            .Where(t => t!.Id == id)
+            .Where(t => t is not null && t.Id == id)
             .Min(t => t!.Position);
 
-        // Console.WriteLine($"FileId: {id} Length: {fileLen}");
-
-        // var isFirst = true;
-        // var wasteId = 0;
-        // foreach (var dp in diskLayout.ToList())
-        // {
-        //     if (dp is OccupiedByFile)
-        //     {
-        //         isFirst = true;
-        //         continue;
-        //     }
-
-        //     if (isFirst)
-        //     {
-        //         wasteId++;
-        //         isFirst = false;
-        //     }
-
-        //     diskLayout[dp.Position] = (dp as WastedSpace)! with { WasteId = wasteId };
-        // }
-
-
         var freeSpace = diskLayout
-            .Where(t => t is WastedSpace)
             .Select(t => t as WastedSpace)
-            .Where(t => t!.Position < fileFirstPos)
+            .Where(t => t is not null && t.Position < fileFirstPos)
             .GroupBy(t => t!.WasteId)
             .Where(g => g.Count() >= fileLen)
             .OrderBy(g => g.Min(e => e!.Position))
@@ -78,14 +54,13 @@ void PackForPart2(List<DiskPosition> diskLayout)
         foreach (var source in sourceFilePositions)
         {
             var dest = diskLayout
-                .Where(t => t is WastedSpace space && space.WasteId == freeSpace)
                 .Select(t => t as WastedSpace)
+                .Where(t => t is not null && t.WasteId == freeSpace)
                 .OrderBy(t => t!.Position)
                 .First()!;
 
             diskLayout[dest.Position] = dest.ReplaceWith(source);
             diskLayout[source.Position] = source.ReplaceWith(dest);
-
         }
     }
 }
