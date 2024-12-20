@@ -11,8 +11,18 @@ var part1 = map.GetStartingPoints()
     })
     .DefaultIfEmpty(0).Sum();
 
+var part2 = map.GetStartingPoints()
+    .Select(sp =>
+    {
+        var trails = map.GetFinalPositions(sp, 1, [sp]).Count();
+        // Console.WriteLine($"Trails for {sp}: {trails}");
+        return trails;
+    })
+    .DefaultIfEmpty(0).Sum();
+
 // var part1 = map.GetFinalPositions(new Vector(0,6),1,[]).Distinct().Count();
 Console.WriteLine("Part1: " + part1);
+Console.WriteLine("Part2: " + part2);
 
 public readonly record struct Vector(int X, int Y)
 {
