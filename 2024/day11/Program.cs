@@ -19,6 +19,7 @@ long GetNumberOfStones(List<long> stones, long maxLevel)
         var partial = GetNumberOfStone(s, 0, maxLevel, 1, cache);
         result += partial;
     });
+    Console.WriteLine($"cached elements: {cache.TotalElements}");
     return result;
 }
 
@@ -75,27 +76,28 @@ List<long> SplitStone(long stone)
 public class ResultCache
 {
     private static Dictionary<long, Dictionary<long, long>> _cache = new();
-
-    public void AddIfNotPresent(long stone, long computedBlinks, long resultingNumberOfStones)
+    public long TotalElements { get; private set; } = 0;
+    public void AddIfNotPresent(long stone, long blinks, long resultingNumberOfStones)
     {
         lock (_cache)
         {
-            if (computedBlinks == 0 && resultingNumberOfStones != 1)
-                throw new InvalidOperationException($"Tried to Add to Cache! stone: {stone} @{computedBlinks} => {resultingNumberOfStones}");
+            if (blinks == 0 && resultingNumberOfStones != 1)
+                throw new InvalidOperationException($"Tried to Add to Cache! stone: {stone} @{blinks} => {resultingNumberOfStones}");
 
             if (!_cache.ContainsKey(stone))
                 _cache.Add(stone, new());
 
             var values = _cache[stone];
-            if (!values.ContainsKey(computedBlinks))
+            if (!values.ContainsKey(blinks))
             {
-                // Console.WriteLine($"Added to Cache! stone: {stone} @{computedBlinks} => {resultingNumberOfStones}");
-                values.Add(computedBlinks, resultingNumberOfStones);
+                // Console.WriteLine($"Added to Cache! stone: {stone} @{blinks} => {resultingNumberOfStones}");
+                TotalElements ++;
+                values.Add(blinks, resultingNumberOfStones);
             }
         }
     }
 
-    public long TryGet(long stone, long computedBlinks)
+    public long TryGet(long stone, long blinks)
     {
         lock (_cache)
         {
@@ -103,11 +105,11 @@ public class ResultCache
                 return 0;
 
             var values = _cache[stone];
-            if (!values.ContainsKey(computedBlinks))
+            if (!values.ContainsKey(blinks))
                 return 0;
 
-            var value = values[computedBlinks];
-            // Console.WriteLine($"Cache hit! stone: {stone} @{computedBlinks} => {value}");
+            var value = values[blinks];
+            // Console.WriteLine($"Cache hit! stone: {stone} @{blinks} => {value}");
             return value;
         }
     }
