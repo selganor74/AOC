@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using System.Collections.Immutable;
 
 var garden = File.ReadAllLines("input.txt").ToList();
 
@@ -42,16 +43,17 @@ do
             );
         }
     } while (toExplore.Any());
+
     allCultures.Add(currentCulture);
-    Console.WriteLine($"{currentCulture.Culture}: {currentCulture.Price,-10} to go: {toVisit.Count}");
+
+    Console.WriteLine($"{currentCulture.Culture}: {currentCulture.Price,-10} For Bulk Discount: {currentCulture.GetSides(),4} {currentCulture.PriceForBulkDiscount,-10} to go: {toVisit.Count}");
 } while (toVisit.Keys.Any());
 
-long part1 = allCultures.Select(c =>
-{
-    // Console.WriteLine(c.Culture + ": " + c.Price);
-    return c.Price;
-}).Sum();
+long part1 = allCultures.Select(c => c.Price).Sum();
 Console.WriteLine("Part 1: " + part1);
+
+long part2 = allCultures.Select(c => c.PriceForBulkDiscount).Sum();
+Console.WriteLine("Part 2: " + part2);
 
 public readonly record struct Vector(int X, int Y)
 {
@@ -63,29 +65,52 @@ public readonly record struct Vector(int X, int Y)
 
 public record CultureArea(char Culture)
 {
+    readonly Dictionary<Vector, Cell> _cells = [];
 
-    Dictionary<Vector, Cell> Cells = new();
+    public int Perimeter => _cells.Select(c => c.Value.Perimeter).Sum();
 
-    public int Perimeter => Cells.Select(c => c.Value.Perimeter).Sum();
-
-    public int Area => Cells.Keys.Count;
+    public int Area => _cells.Keys.Count;
 
     public long Price => Area * Perimeter;
 
-    public void AddCell(Vector position)
+    public long PriceForBulkDiscount => Area * GetSides();
+
+    public int GetSides()
     {
-        if (Cells.ContainsKey(position)) {
-            return;
-            // throw new InvalidOperationException($"Cannot set cell at {position} because it is set");
+        var hSideCounter = new SideCounter();
+        foreach (var column in _cells.OrderBy(c => c.Key.X).Select(c => c.Key.X).Distinct().ToList())
+        {
+            var yCells = _cells.Where(c => c.Key.X == column).OrderBy(c => c.Key.Y).Select(c => c.Key.Y).ToList();
+            var iset = new IntervalSet(yCells);
+            hSideCounter.Apply(iset);
         }
 
+        var vSideCounter = new SideCounter();
+        foreach (var row in _cells.OrderBy(c => c.Key.Y).Select(c => c.Key.Y).Distinct().ToList())
+        {
+            var xCells = _cells.Where(c => c.Key.Y == row).OrderBy(c => c.Key.X).Select(c => c.Key.X).ToList();
+            var iset = new IntervalSet(xCells);
+            // Console.WriteLine($"iSet:{iset.Intervals.Count}");
+
+            vSideCounter.Apply(iset);
+            // Console.WriteLine($"Count:{vSideCounter.Count}");
+        }
+        // Console.WriteLine($"hSide:{hSideCounter.Count}  vSide:{vSideCounter.Count}");
+        return hSideCounter.Count + vSideCounter.Count;
+    }
+
+    public void AddCell(Vector position)
+    {
+        if (_cells.ContainsKey(position))
+            return;
+
         var newCell = new Cell(position, Culture);
-        Cells.Add(position, newCell);
+        _cells.Add(position, newCell);
         foreach (var direction in Direction.All())
         {
-            if (Cells.ContainsKey(position + direction))
+            if (_cells.ContainsKey(position + direction))
             {
-                Cells[position + direction].ProcessNeighbor(newCell);
+                _cells[position + direction].ProcessNeighbor(newCell);
             }
         }
     }
@@ -93,7 +118,7 @@ public record CultureArea(char Culture)
 
 public class Cell(Vector position, char culture)
 {
-    Dictionary<Vector, bool> fences = new() {
+    readonly Dictionary<Vector, bool> fences = new() {
         {Direction.North, true},
         {Direction.West, true},
         {Direction.South, true},
@@ -135,7 +160,6 @@ public static class Direction
         yield return South;
         yield return East;
     }
-
 }
 
 public static class MapExtensions
@@ -152,3 +176,110 @@ public static class MapExtensions
         map[position.Y] = new string(rowArray);
     }
 }
+
+public readonly record struct Interval(int Start, int Stop)
+{
+    public int Length => Stop - Start + 1;
+
+    public Interval? Intersect(Interval other)
+    {
+        var start = Math.Max(Start, other.Start);
+        var stop = Math.Min(Stop, other.Stop);
+
+        if (start <= stop) return new Interval(start, stop);
+
+        return null;
+    }
+}
+
+public class IntervalSet
+{
+    public List<Interval> Intervals = [];
+
+    public IntervalSet(List<int> cells)
+    {
+        cells.Sort();
+        int start = cells.First();
+        int stop = start;
+
+        for (int i = 1; i < cells.Count; i++)
+        {
+            if (cells[i] - cells[i - 1] == 1)
+                stop = cells[i];
+            else
+            {
+                AddInterval(new Interval(start, stop));
+                start = cells[i];
+                stop = start;
+            }
+        }
+
+        AddInterval(new Interval(start, stop));
+    }
+
+    public void AddInterval(Interval i)
+    {
+        Intervals.Add(i);
+        Intervals.Sort((a, b) => b.Start - a.Start);
+    }
+}
+
+public class SideCounter
+{
+    public int Count { get; private set; }
+
+    IntervalSet? lastIntervalSet = null;
+
+    public void Apply(IntervalSet intSet)
+    {
+        if (lastIntervalSet is null)
+        {
+            Count = 2 * intSet.Intervals.Count;
+            lastIntervalSet = intSet;
+            return;
+        }
+
+        // Console.WriteLine($"Applying {intSet.Intervals.Count} to existing {lastIntervalSet.Intervals.Count} intervals.");
+        List<int> unmatchedStarts = intSet.Intervals.Select(s => s.Start).ToList();
+        List<int> unmatchedStops = intSet.Intervals.Select(s => s.Stop).ToList();
+
+        foreach (var interval in lastIntervalSet.Intervals)
+        {
+            foreach (var tInt in intSet.Intervals)
+            {
+                var intersection = interval.Intersect(tInt);
+                if (intersection is null)
+                {
+                    // Console.WriteLine($"{interval} with {tInt} do not intersect");
+                    continue;
+                }
+
+                // Console.WriteLine($"Intersecting {interval} with {tInt} obtaining {intersection}");
+
+                if (tInt.Start == interval.Start)
+                    if (unmatchedStarts.Contains(tInt.Start))
+                        unmatchedStarts.Remove(tInt.Start);
+
+                if (tInt.Stop == interval.Stop)
+                    if (unmatchedStops.Contains(tInt.Stop))
+                        unmatchedStops.Remove(tInt.Stop);
+            }
+        }
+        // Console.WriteLine($"Applied {intSet.Intervals.Count} intervals. Count is now {Count}");
+        Count += unmatchedStarts.Count + unmatchedStops.Count;
+        lastIntervalSet = intSet;
+    }
+}
+
+/*
+    X X
+    XXX
+    XXX
+    X X
+    XXX
+    XXX
+    25
+
+    The number of sides to add at each step is the number of extremities (start and stop)
+    that do not match with the previous intervals that intersect.
+*/ 
