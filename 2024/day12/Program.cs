@@ -278,7 +278,7 @@ public class SideCounter
     X X
     XXX
     XXX
-    25
+    256
 
     The number of sides to add at each step is the number of extremities (start and stop)
     that do not match with the previous intervals that intersect.
