@@ -51,12 +51,12 @@ for (int seconds = 1; seconds <= totSeconds; seconds++)
 }
 
 var part1 = 1;
-var robotsInQ1 = robots
+_ = robots
     .GroupBy(r => r.Quadrant())
     .Where(g => g.Key > 0)
     .Select(g => { part1 *= g.Count(); return g; })
     .ToList();
-    
+
 Console.WriteLine("Part1: " + part1);
 
 
