@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Http.Headers;
 
 var inputContent = File.ReadAllLines("input.txt");
 
@@ -6,16 +7,17 @@ List<string> map = new();
 List<string> commandsList = new();
 var enumerator = inputContent.GetEnumerator();
 
-string row = ExtractMap(map, enumerator);
+ExtractMap(map, enumerator);
 
-string commands = ExtractCommands(commandsList, enumerator, ref row);
+string commands = ExtractCommands(commandsList, enumerator);
 
 map.Dump();
 Console.WriteLine(commands);
 
 var position = map.FindRobot();
-Console.WriteLine(position);
+Console.WriteLine("Robot starts at position" + position);
 
+// Checks that the GetAt and SetAt are working as they should
 Debug.Assert(map.GetAtPosition(position) == '@');
 Debug.Assert(map.SetAtPosition(position, 'X') == '@');
 Debug.Assert(map.GetAtPosition(position) == 'X');
@@ -25,16 +27,45 @@ var robot = new Robot(position, map);
 foreach (var command in commands)
 {
     robot.ExecuteCommand(command);
-    // Console.Clear();
-    //Console.WriteLine("Command Executed: " + command);
-    //Console.ReadKey(true);
+    // map.Dump();
+    // Console.ReadKey(true);
 }
 
 map.Dump();
 var part1 = map.GetAllBoxesGPSCoord();
 Console.WriteLine("Part1: " + part1);
 
-static string ExtractMap(List<string> map, System.Collections.IEnumerator enumerator)
+// P A R T   2
+inputContent = File.ReadAllLines("input.txt");
+
+map = new();
+commandsList = new();
+enumerator = inputContent.GetEnumerator();
+
+P2ExtractMap(map, enumerator);
+
+commands = ExtractCommands(commandsList, enumerator);
+
+map.Dump();
+Console.WriteLine(commands);
+
+position = map.FindRobot();
+Console.WriteLine("Robot starts at position" + position);
+
+var robotP2 = new P2Robot(position, map);
+foreach (var command in commands)
+{
+    robotP2.ExecuteCommand(command);
+    // map.Dump();
+    // Console.ReadKey(true);
+}
+
+map.Dump();
+var part2 = map.GetAllBoxesGPSCoord('[');
+Console.WriteLine("Part2: " + part2);
+
+
+static void ExtractMap(List<string> map, System.Collections.IEnumerator enumerator)
 {
     enumerator.MoveNext();
     var row = (string)enumerator.Current;
@@ -45,11 +76,32 @@ static string ExtractMap(List<string> map, System.Collections.IEnumerator enumer
         if (!enumerator.MoveNext()) break;
         row = (string)enumerator.Current;
     } while (!string.IsNullOrEmpty(row));
-    return row;
 }
 
-static string ExtractCommands(List<string> commandsList, System.Collections.IEnumerator enumerator, ref string row)
+static void P2ExtractMap(List<string> map, System.Collections.IEnumerator enumerator)
 {
+    enumerator.MoveNext();
+    var row = (string)enumerator.Current;
+    do
+    {
+        var toAdd = "";
+        foreach (var symbol in row)
+        {
+            if (symbol == '#') toAdd += "##";
+            if (symbol == '.') toAdd += "..";
+            if (symbol == 'O') toAdd += "[]";
+            if (symbol == '@') toAdd += "@.";
+        }
+        map.Add(toAdd);
+
+        if (!enumerator.MoveNext()) break;
+        row = (string)enumerator.Current;
+    } while (!string.IsNullOrEmpty(row));
+}
+
+static string ExtractCommands(List<string> commandsList, System.Collections.IEnumerator enumerator)
+{
+    string row = "";
     do
     {
         commandsList.Add(row);
@@ -112,6 +164,89 @@ public class Robot(Vector position, List<string> map)
     }
 }
 
+public class P2Robot(Vector position, List<string> map)
+{
+    public Vector Position { get; private set; } = position;
+    public List<string> Map { get; } = map;
+
+    private List<Vector> CanMove(Vector direction, Vector from)
+    {
+        var next = from + direction;
+        var atPos = Map.GetAtPosition(next);
+
+        if (atPos == '.') return [next];
+        if (atPos == '#') return [];
+
+        var col = CanMove(direction, next);
+
+        if (direction == Vector.Left || direction == Vector.Right)
+        {
+            if (atPos == '[' || atPos == ']')
+            {
+                if (col.Count > 0)
+                    return [next, .. col];
+
+                return [];
+            }
+        }
+
+        if (direction == Vector.Up || direction == Vector.Down)
+        {
+            if (atPos == '[')
+            {
+                var colR = CanMove(direction, next + Vector.Right);
+                if (col.Count > 0 && colR.Count > 0) return [next, .. colR, .. col];
+                return [];
+            }
+            if (atPos == ']')
+            {
+                var colL = CanMove(direction, next + Vector.Left);
+                if (col.Count > 0 && colL.Count > 0) return [next, .. colL, .. col];
+                return [];
+            };
+        }
+
+        throw new InvalidOperationException($"Unexpected map symbol '{atPos}'");
+    }
+
+    private void Move(Vector direction)
+    {
+        var toBeMoved = CanMove(direction, Position);
+        if (toBeMoved.Count == 0)
+            return;
+
+        // We MUST swap each position exactly once!
+        toBeMoved = toBeMoved.Distinct().ToList();
+
+        if (direction == Vector.Left || direction == Vector.Right)
+        {
+            toBeMoved = toBeMoved.OrderBy(p => p.X * -direction.X).ToList();
+        }
+        else
+        {
+            toBeMoved = toBeMoved.OrderBy(p => p.Y * -direction.Y).ToList();
+        }
+
+        // Console.WriteLine("To Be Moved:\n" + string.Join("\r\n", toBeMoved));
+        
+        foreach (var toSwap in toBeMoved)
+        {
+            // Console.WriteLine($"Swapping {toSwap} ({map.GetAtPosition(toSwap)}) with {toSwap-direction} ({Map.GetAtPosition(toSwap - direction)}) ");
+            var replaced = map.SetAtPosition(toSwap, map.GetAtPosition(toSwap - direction));
+            map.SetAtPosition(toSwap - direction, replaced);
+        }
+
+        // finally set the new position
+        Position += direction;
+    }
+
+    public void ExecuteCommand(char command)
+    {
+        var direction = Vector.CommandDirection[command];
+        Move(direction);
+    }
+}
+
 public static class EnumerableOfStringExtensions
 {
     public static void Dump(this IEnumerable<string> enumerable)
@@ -143,13 +278,14 @@ public static class EnumerableOfStringExtensions
         return toReturn;
     }
 
-    public static long GetAllBoxesGPSCoord(this List<string> map)
+    public static long GetAllBoxesGPSCoord(this List<string> map, char toFind = 'O')
     {
         long toReturn = 0;
-        for(int y = 0; y < map.Count; y++)
-            for(int x = 0; x < map[y].Length; x++) {
-                var pos = new Vector(x,y);
-                if(map.GetAtPosition(pos) == 'O')
+        for (int y = 0; y < map.Count; y++)
+            for (int x = 0; x < map[y].Length; x++)
+            {
+                var pos = new Vector(x, y);
+                if (map.GetAtPosition(pos) == toFind)
                     toReturn += pos.AsGpsCoord();
             }
 
@@ -176,7 +312,8 @@ public readonly record struct Vector(int X, int Y)
         {'<', Left},
     };
 
-    public long AsGpsCoord(){
-        return 100*Y + X;
+    public long AsGpsCoord()
+    {
+        return 100 * Y + X;
     }
 }
