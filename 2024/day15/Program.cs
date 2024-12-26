@@ -114,10 +114,15 @@ static string ExtractCommands(List<string> commandsList, System.Collections.IEnu
     return commands;
 }
 
-public class Robot(Vector position, List<string> map)
+public class Robot
 {
-    public Vector Position { get; private set; } = position;
-    public List<string> Map { get; } = map;
+    public Vector Position { get; private set; }
+    public List<string> Map { get; }
+
+    public Robot(Vector position, List<string> map) {
+        Position = position;
+        Map = map;
+    }
 
     private bool CanMove(Vector direction, Vector from)
     {
@@ -148,8 +153,8 @@ public class Robot(Vector position, List<string> map)
         // then move backwards while swapping items
         do
         {
-            var replaced = map.SetAtPosition(start, map.GetAtPosition(start - direction));
-            map.SetAtPosition(start - direction, replaced);
+            var replaced = Map.SetAtPosition(start, Map.GetAtPosition(start - direction));
+            Map.SetAtPosition(start - direction, replaced);
             start -= direction;
         } while (start != Position);
 
@@ -164,10 +169,15 @@ public class Robot(Vector position, List<string> map)
     }
 }
 
-public class P2Robot(Vector position, List<string> map)
+public class P2Robot
 {
-    public Vector Position { get; private set; } = position;
-    public List<string> Map { get; } = map;
+    public Vector Position { get; private set; }
+    public List<string> Map { get; }
+
+    public P2Robot(Vector position, List<string> map) {
+        Position = position;
+        Map = map;
+    }
 
     private List<Vector> CanMove(Vector direction, Vector from)
     {
@@ -232,8 +242,8 @@ public class P2Robot(Vector position, List<string> map)
         foreach (var toSwap in toBeMoved)
         {
             // Console.WriteLine($"Swapping {toSwap} ({map.GetAtPosition(toSwap)}) with {toSwap-direction} ({Map.GetAtPosition(toSwap - direction)}) ");
-            var replaced = map.SetAtPosition(toSwap, map.GetAtPosition(toSwap - direction));
-            map.SetAtPosition(toSwap - direction, replaced);
+            var replaced = Map.SetAtPosition(toSwap, Map.GetAtPosition(toSwap - direction));
+            Map.SetAtPosition(toSwap - direction, replaced);
         }
 
         // finally set the new position
