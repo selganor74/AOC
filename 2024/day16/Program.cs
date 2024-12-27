@@ -28,7 +28,7 @@ do
         continue;
     }
 
-    var nextStep = currentMazeSnapshot.MovesLeft.First();
+    var nextStep = currentMazeSnapshot.MovesLeft.Last();
     currentMazeSnapshot.MovesLeft.Remove(nextStep);
 
     var newMaze = currentMazeSnapshot.Maze.ApplyMove(nextStep);
