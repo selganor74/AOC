@@ -1,92 +1,105 @@
-﻿var map = File.ReadAllLines("input.txt").ToList();
+﻿var map = File.ReadAllLines("/home/administrator/develop/AOC/2024/day16/input.txt").ToList();
 
 map.Dump();
 
-List<MazeSnapshot> mazeStack = new();
-List<MazeSolver> solutions = new();
+var nodes = map.ExtractNodes();
+Console.WriteLine("Nodes Extracted: " + nodes.Count);
+// BruteForceSolution(map);
 
-var startingMaze = new MazeSolver(map, [new Move(map.FindSymbol('S'), Vector.East, 0)]);
-var currentMazeSnapshot = new MazeSnapshot(startingMaze, startingMaze.GetAvailableMoves());
-mazeStack.Add(currentMazeSnapshot);
-long totalTrials = 0;
-var firstSolutionFound = false;
-long leastPath = long.MaxValue;
-do
+static void BruteForceSolution(List<string> map)
 {
-    totalTrials++;
+    List<MazeSnapshot> mazeStack = new();
+    List<MazeSolver> solutions = new();
 
-    if (currentMazeSnapshot.MovesLeft.Count == 0)
+    var startingMaze = new MazeSolver(map, [new Move(map.FindSymbol('S'), Vector.East, 0)]);
+    var currentMazeSnapshot = new MazeSnapshot(startingMaze, startingMaze.GetAvailableMoves());
+
+    mazeStack.Add(currentMazeSnapshot);
+
+    long totalTrials = 0;
+    var firstSolutionFound = false;
+    long leastPath = long.MaxValue;
+
+    do
     {
-        mazeStack.Remove(currentMazeSnapshot);
-        // Console.WriteLine("Current Depth (-): " + mazeStack.Count);
-        if (mazeStack.Count == 0)
+        totalTrials++;
+
+        if (currentMazeSnapshot.MovesLeft.Count == 0)
         {
-            // throw new InvalidOperationException("Unable to find a solution!");
-            break;
+            mazeStack.Remove(currentMazeSnapshot);
+            // Console.WriteLine("Current Depth (-): " + mazeStack.Count);
+            if (mazeStack.Count == 0)
+            {
+                // throw new InvalidOperationException("Unable to find a solution!");
+                break;
+            }
+            currentMazeSnapshot = mazeStack.Last();
+            continue;
         }
-        currentMazeSnapshot = mazeStack.Last();
-        continue;
-    }
 
-    var nextStep = currentMazeSnapshot.MovesLeft.Last();
-    currentMazeSnapshot.MovesLeft.Remove(nextStep);
+        var nextStep = currentMazeSnapshot.MovesLeft.Last();
+        currentMazeSnapshot.MovesLeft.Remove(nextStep);
 
-    var newMaze = currentMazeSnapshot.Maze.ApplyMove(nextStep);
+        var newMaze = currentMazeSnapshot.Maze.ApplyMove(nextStep);
 
-    if (totalTrials % 1000 == 0)
-    {
-        newMaze.DrawPath();
-        //Console.WriteLine("Drawn ... press a key");
-        //Console.ReadKey(true);
-    }
-
-
-    if (newMaze.GetPathPoints() >= leastPath)
-        continue;
-
-    if (firstSolutionFound)
-    {
-        // newMaze.DrawPath();
-        //Console.WriteLine("Drawn ... press a key");
-        //Console.ReadKey(true);
-    }
-
-    if (newMaze.IsSolved())
-    {
-        firstSolutionFound = true;
-        var pathPoints = newMaze.GetPathPoints();
-        if (pathPoints < leastPath)
+        if (totalTrials % 1000 == 0)
         {
-            solutions.Add(newMaze);
             newMaze.DrawPath();
-            Console.WriteLine("shorter solution found: " + pathPoints + " (wins against " + leastPath + ") ");
-            leastPath = pathPoints;
-
-            // start from scratch but with a new "record" set
-            mazeStack = new();
-
-            startingMaze = new MazeSolver(map, [new Move(map.FindSymbol('S'), Vector.East, 0)]);
-            currentMazeSnapshot = new MazeSnapshot(startingMaze, startingMaze.GetAvailableMoves());
-            mazeStack.Add(currentMazeSnapshot);
+            //Console.WriteLine("Drawn ... press a key");
+            //Console.ReadKey(true);
         }
-    }
-    else
-    {
-        currentMazeSnapshot = new(newMaze, newMaze.GetAvailableMoves());
-        mazeStack.Add(currentMazeSnapshot);
-        // Console.WriteLine("Current Depth (+): " + mazeStack.Count);
-    }
 
 
-} while (true);
-var part1 = solutions.OrderBy(s => s.GetPathPoints()).First().GetPathPoints();
-Console.WriteLine($"Part1: " + part1);
+        if (newMaze.GetPathPoints() >= leastPath)
+            continue;
+
+        if (firstSolutionFound)
+        {
+            // newMaze.DrawPath();
+            //Console.WriteLine("Drawn ... press a key");
+            //Console.ReadKey(true);
+        }
+
+        if (newMaze.IsSolved())
+        {
+            firstSolutionFound = true;
+            var pathPoints = newMaze.GetPathPoints();
+            if (pathPoints < leastPath)
+            {
+                solutions.Add(newMaze);
+                newMaze.DrawPath();
+                Console.WriteLine("shorter solution found: " + pathPoints + " (wins against " + leastPath + ") ");
+                leastPath = pathPoints;
+
+                // start from scratch but with a new "record" set
+                mazeStack = new();
+
+                var startingPlace = map.FindSymbol('S');
+                startingMaze = new MazeSolver(map, [new Move(startingPlace, Vector.East, 0)]);
+                currentMazeSnapshot = new MazeSnapshot(startingMaze, startingMaze.GetAvailableMoves());
+
+                mazeStack.Add(currentMazeSnapshot);
+            }
+        }
+        else
+        {
+            currentMazeSnapshot = new(newMaze, newMaze.GetAvailableMoves());
+            mazeStack.Add(currentMazeSnapshot);
+            // Console.WriteLine("Current Depth (+): " + mazeStack.Count);
+        }
+
+
+    } while (true);
+    var part1 = solutions.OrderBy(s => s.GetPathPoints()).First().GetPathPoints();
+    Console.WriteLine($"Part1: " + part1);
+}
 
 public readonly record struct MazeSnapshot(MazeSolver Maze, List<Move> MovesLeft);
 
 public class MazeSolver
 {
     private readonly List<Move> stepsSoFar;
+    public List<Move> StepsSoFar => [.. stepsSoFar];
     private readonly List<string> map;
 
     /// <summary>
@@ -197,7 +210,66 @@ public static class UsefulExtensions
     {
         return [.. source];
     }
+
+    public static Dictionary<Node, List<Arc>> ExtractNodes(this List<string> map)
+    {
+        Dictionary<Node, List<Arc>> toReturn = new();
+
+        for (var y = 1; y < map.Count - 1; y++)
+        {
+            for (var x = 1; x < map[y].Length - 1; x++)
+            {
+                var nodePosition = new Vector(x, y);
+                if (map.GetAtPosition(nodePosition) == '#')
+                    continue;
+
+                // extracts all the directions that this node can exit to.
+                var exitingDirections = Vector.Directions.Where(d => map.GetAtPosition(d.Value + nodePosition) != '#').ToList();
+                foreach (var exit in exitingDirections)
+                {
+
+                    /* each exit produces a node for every other exit 
+                    
+                        <->O<->
+                           ^
+                           |
+                           V 
+                    */
+
+                    var enteringDirection = -exit.Value;
+
+                    var arcs = exitingDirections
+                        .Where(d => d.Value != exit.Value)
+                        .Select(d =>
+                        {
+                            var destinationPosition = nodePosition + d.Value;
+                            Node destinationNode = new(destinationPosition, d.Value);
+                            var weigth = 0;
+                            if (enteringDirection != d.Value)
+                                weigth = 1001;
+                            if (enteringDirection == d.Value)
+                                weigth = 1;
+                            if (enteringDirection == -d.Value) // Should never happen!
+                                weigth = 2001;
+
+                            Arc arc = new(weigth, destinationNode);
+                            return arc;
+                        })
+                        .ToList();
+
+                    Node newNode = new(nodePosition, enteringDirection);
+                    toReturn.Add(newNode, arcs);
+                }
+            }
+        }
+
+        return toReturn;
+    }
 }
+
+public record struct Arc(long Weigth, Node Destination);
+
+public record struct Node(Vector Position, Vector EnteringDirection);
 
 public readonly record struct Vector(int X, int Y)
 {
