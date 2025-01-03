@@ -1,9 +1,16 @@
-﻿var map = File.ReadAllLines("/home/administrator/develop/AOC/2024/day16/input.txt").ToList();
+﻿using System.Diagnostics;
+
+var map = File.ReadAllLines("input.txt").ToList();
 
 map.Dump();
 
-var nodes = map.ExtractNodes();
-Console.WriteLine("Nodes Extracted: " + nodes.Count);
+var startPosition = map.FindSymbol('S');
+var startDirection = Vector.Directions['>'];
+var startNode = new Node(startPosition, startDirection);
+var endPosition = map.FindSymbol('E');
+
+var part1 = map.FindLessCostPath(startNode, endPosition);
+Console.WriteLine("Part 1: " + part1);
 // BruteForceSolution(map);
 
 static void BruteForceSolution(List<string> map)
@@ -215,19 +222,19 @@ public static class UsefulExtensions
     {
         Dictionary<Node, List<Arc>> toReturn = new();
 
-        for (var y = 1; y < map.Count - 1; y++)
+        for (var y = 0; y < map.Count; y++)
         {
-            for (var x = 1; x < map[y].Length - 1; x++)
+            for (var x = 0; x < map[y].Length; x++)
             {
                 var nodePosition = new Vector(x, y);
                 if (map.GetAtPosition(nodePosition) == '#')
                     continue;
 
                 // extracts all the directions that this node can exit to.
-                var exitingDirections = Vector.Directions.Where(d => map.GetAtPosition(d.Value + nodePosition) != '#').ToList();
+                // We have a special case for the start position, where we have all entering directions possible. ---------------------------------------V
+                var exitingDirections = Vector.Directions.Where(d => map.GetAtPosition(d.Value + nodePosition) != '#' || map.GetAtPosition(nodePosition) == 'S').ToList();
                 foreach (var exit in exitingDirections)
                 {
-
                     /* each exit produces a node for every other exit 
                     
                         <->O<->
@@ -239,6 +246,7 @@ public static class UsefulExtensions
                     var enteringDirection = -exit.Value;
 
                     var arcs = exitingDirections
+                        .Where(d => map.GetAtPosition(d.Value + nodePosition) != '#')
                         .Where(d => d.Value != exit.Value)
                         .Select(d =>
                         {
@@ -252,6 +260,8 @@ public static class UsefulExtensions
                             if (enteringDirection == -d.Value) // Should never happen!
                                 weigth = 2001;
 
+                            Debug.Assert(weigth != 0);
+
                             Arc arc = new(weigth, destinationNode);
                             return arc;
                         })
@@ -264,6 +274,59 @@ public static class UsefulExtensions
         }
 
         return toReturn;
+    }
+
+    /// <summary>
+    /// Dijkstra docet
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public static long FindLessCostPath(this List<string> map, Node start, Vector end)
+    {
+        List<long> costs = new();
+        var allNodes = map.ExtractNodes();
+
+        // These are the arrival points (can be more than one if the destination an be reached from several directions)
+        var endNodes = allNodes.Where(n => n.Key.Position == end).ToList();
+        foreach (var endNode in endNodes)
+        {
+            var sw = Stopwatch.StartNew();
+            // we must compute the shortest path for each end node, 
+            Dictionary<Node, List<Arc>> unvisited = new();
+            foreach (var n in allNodes) unvisited.Add(n.Key, n.Value);
+
+            Dictionary<Node, List<Arc>> visited = new();
+            Dictionary<Node, long> distances = new();
+            Dictionary<Node, Node> path = new();
+
+            distances.Add(start, 0);
+            while (unvisited.Count() != 0 && distances.Where(kv => unvisited.ContainsKey(kv.Key)).Any())
+            {
+                var shortestDistanceNodeSoFar = distances.Where(kv => unvisited.ContainsKey(kv.Key)).OrderBy(kv => kv.Value).First();
+                var currentNode = unvisited.Single(kv => kv.Key == shortestDistanceNodeSoFar.Key);
+                // Console.WriteLine("Visiting node: " + currentNode.Key);
+                visited.Add(currentNode.Key, currentNode.Value);
+                unvisited.Remove(currentNode.Key);
+
+                foreach (var arc in currentNode.Value.Where(d => unvisited.ContainsKey(d.Destination)))
+                {
+                    var distance = distances[currentNode.Key] + arc.Weigth;
+                    if (!distances.ContainsKey(arc.Destination))
+                        distances.Add(arc.Destination, long.MaxValue);
+
+                    if (distance < distances[arc.Destination])
+                    {
+                        distances[arc.Destination] = distance;
+                        path[arc.Destination] = currentNode.Key;
+                    }
+                }
+            }
+            sw.Stop();
+            Console.WriteLine("Computed path for end: " + endNode + " cost: " + distances[endNode.Key] + " in " + sw.Elapsed);
+            costs.Add(distances[endNode.Key]);
+        }
+        return costs.Min();
     }
 }
 
