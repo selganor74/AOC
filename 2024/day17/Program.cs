@@ -70,7 +70,13 @@ static void Run(State state, List<string> program)
             case "2":
                 {
                     state.lastInstruction = "bst";
+                    Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
+                    Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
+
                     state.regB = comboOperand & 0b_0111;
+
+                    Console.WriteLine("".PadRight(32,'-'));
+                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
                     break;
                 }
 
@@ -95,7 +101,13 @@ static void Run(State state, List<string> program)
             case "4":
                 {
                     state.lastInstruction = "bxc";
+                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0') + " XOR");
+                    Console.WriteLine(Convert.ToString(state.regC, 2).PadLeft(32,'0'));
+                    
                     state.regB ^= state.regC;
+                    
+                    Console.WriteLine("".PadRight(32,'-'));
+                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
                     break;
                 }
 
@@ -106,7 +118,15 @@ static void Run(State state, List<string> program)
             case "5":
                 {
                     state.lastInstruction = "out";
-                    state.output.Add(comboOperand.ToString());
+                    Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
+                    Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
+
+                    long toOutput = comboOperand & 0b_0111;
+
+                    Console.WriteLine("".PadRight(32,'-'));
+                    Console.WriteLine(Convert.ToString(toOutput, 2).PadLeft(32,'0'));
+
+                    state.output.Add(toOutput.ToString());
                     break;
                 }
 
@@ -165,7 +185,7 @@ static void Run(State state, List<string> program)
 }
 
 State state = new();
-Run(new State(), program);
+Run(state, program);
 string part1 = state.Output;
 Console.WriteLine("Part1: " + part1);
 
