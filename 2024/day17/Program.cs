@@ -8,9 +8,59 @@ Program: 2,4,1,5,7,5,1,6,0,3,4,6,5,5,3,0
 using System.Reflection.Emit;
 
 
-var program = "2,4,1,5,7,5,1,6,0,3,4,6,5,5,3,0".Split(',').ToList();
+var programAsString = "2,4,1,5,7,5,1,6,0,3,4,6,5,5,3,0";
+var program = programAsString.Split(',').ToList();
 
 Console.WriteLine("Program: " + string.Join(',', program));
+
+State state = new();
+Run(state, program);
+string part1 = state.Output;
+Console.WriteLine("Part1: " + part1);
+
+
+/*
+the number of outputted elements grows with powers of 8
+regATry < 8 ^ 1         => 1 output
+regATry < 8 ^ 2 (64)    => 2 output
+regATry < 8 ^ 3 (512)   => 3 output
+regATry < 8 ^ 4 (4096)  => 4 output
+...
+8 ^ (program.Count - 1) <= regATry < 8 ^ program.Count
+
+
+Last number changes on multiples of 8 ^ (program.Count - 1) 
+*/
+// long regATry = - 1;
+State part2State; ;
+int matching = 1;
+
+long increment = (long)Math.Pow(8, program.Count - 1);
+long regATry = (long)Math.Pow(8, program.Count - 1) - increment;
+long lastPrinted = regATry;
+do
+{
+    regATry += increment;
+    // regATry++;
+    part2State = new State();
+    part2State.regA = regATry;
+    Run(part2State, program);
+    if (part2State.output.TakeLast(matching).First() == program.TakeLast(matching).First())
+    {
+        increment /= 8;
+        matching ++;
+    }
+    // if (part2State.Output[..1] == "2")
+    {
+        Console.WriteLine($"{regATry,15} - {lastPrinted,15} = {regATry - lastPrinted,5}: " + programAsString);
+        Console.WriteLine($"{regATry,15} - {lastPrinted,15} = {regATry - lastPrinted,5}: " + part2State.Output);
+        lastPrinted = regATry;
+    }
+    Console.ReadKey(true);
+} while (programAsString != part2State.Output);
+
+Console.WriteLine("part2: " + regATry);
+
 
 static void Run(State state, List<string> program)
 {
@@ -70,13 +120,13 @@ static void Run(State state, List<string> program)
             case "2":
                 {
                     state.lastInstruction = "bst";
-                    Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
-                    Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
+                    // Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
+                    // Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
 
                     state.regB = comboOperand & 0b_0111;
 
-                    Console.WriteLine("".PadRight(32,'-'));
-                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
+                    // Console.WriteLine("".PadRight(32,'-'));
+                    // Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
                     break;
                 }
 
@@ -101,13 +151,13 @@ static void Run(State state, List<string> program)
             case "4":
                 {
                     state.lastInstruction = "bxc";
-                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0') + " XOR");
-                    Console.WriteLine(Convert.ToString(state.regC, 2).PadLeft(32,'0'));
-                    
+                    // Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0') + " XOR");
+                    // Console.WriteLine(Convert.ToString(state.regC, 2).PadLeft(32,'0'));
+
                     state.regB ^= state.regC;
-                    
-                    Console.WriteLine("".PadRight(32,'-'));
-                    Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
+
+                    // Console.WriteLine("".PadRight(32,'-'));
+                    // Console.WriteLine(Convert.ToString(state.regB, 2).PadLeft(32,'0'));
                     break;
                 }
 
@@ -118,13 +168,13 @@ static void Run(State state, List<string> program)
             case "5":
                 {
                     state.lastInstruction = "out";
-                    Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
-                    Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
+                    // Console.WriteLine(Convert.ToString(comboOperand, 2).PadLeft(32,'0') + " AND");
+                    // Console.WriteLine(Convert.ToString(0b_0111, 2).PadLeft(32,'0'));
 
                     long toOutput = comboOperand & 0b_0111;
 
-                    Console.WriteLine("".PadRight(32,'-'));
-                    Console.WriteLine(Convert.ToString(toOutput, 2).PadLeft(32,'0'));
+                    // Console.WriteLine("".PadRight(32,'-'));
+                    // Console.WriteLine(Convert.ToString(toOutput, 2).PadLeft(32,'0'));
 
                     state.output.Add(toOutput.ToString());
                     break;
@@ -184,11 +234,6 @@ static void Run(State state, List<string> program)
     }
 }
 
-State state = new();
-Run(state, program);
-string part1 = state.Output;
-Console.WriteLine("Part1: " + part1);
-
 public class State
 {
     public string lastInstruction = "";
@@ -201,8 +246,9 @@ public class State
     public List<string> output = new();
     public string Output => string.Join(',', output);
 
-    public void Dump() {
-        Console.WriteLine("Executed: " + lastInstruction + " A: " + regA + " B: " + regB + " C: " + regC + " ip: " + ip + " output: " + Output);
+    public void Dump()
+    {
+        // Console.WriteLine("Executed: " + lastInstruction + " A: " + regA + " B: " + regB + " C: " + regC + " ip: " + ip + " output: " + Output);
     }
 
 }
