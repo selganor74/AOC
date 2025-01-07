@@ -30,26 +30,37 @@ var part1 = distances[new(mapSize)];
 Console.WriteLine("Part1: " + part1);
 
 int nextFalling = numCorrupted;
-Vector curruptionPosition;
+Vector corruptionPosition;
 do
 {
     nextFalling++;
-    curruptionPosition = Vector.FromString(input[nextFalling]);
+    corruptionPosition = Vector.FromString(input[nextFalling]);
 
-    map.SetAtPosition(Vector.FromString(input[nextFalling]), '#');
+    map.SetAtPosition(corruptionPosition, '#');
+    nodes.Remove(new(corruptionPosition));
+    foreach (var v in Vector.Directions)
+    {
+        var toCheck = corruptionPosition + v.Value;
+        if (!map.IsContainedInMap(toCheck)) continue;
+        try
+        {
+            nodes[new(toCheck)].Remove(new Arc(1, new(toCheck)));
+        }
+        catch { }
+    }
 
-    if (lastPath.GetAtPosition(curruptionPosition) != 'O')
+    if (lastPath.GetAtPosition(corruptionPosition) != 'O')
         continue;
 
-    nodes = map.ExtractNodes();
     nodes.Dijkstra(startNode, out distances, out path);
+
     if (distances.ContainsKey(endNode))
         lastPath = map.DrawPath(startNode, endNode, path);
 
     Console.WriteLine("Processed corruption #:" + nextFalling);
 } while (distances.ContainsKey(endNode));
 
-var part2 = Vector.FromString(input[nextFalling]);
+var part2 = corruptionPosition;
 // map.DrawPath(startNode, new(part2), path);
 Console.WriteLine("Part1: " + part1);
 Console.WriteLine($"Part2: {part2.X},{part2.Y}");
@@ -90,6 +101,11 @@ public static class UsefulExtensions
         return [.. source];
     }
 
+    public static bool IsContainedInMap(this List<string> map, Vector toCheck)
+    {
+        return toCheck.X >= 0 && toCheck.Y >= 0 && toCheck.Y < map.Count && toCheck.X < map[toCheck.Y].Length;
+    }
+
     public static Dictionary<Node, List<Arc>> ExtractNodes(this List<string> map)
     {
         Dictionary<Node, List<Arc>> toReturn = new();
@@ -107,14 +123,10 @@ public static class UsefulExtensions
                 var exitingDirections = Vector.Directions
                     .Where(d =>
                     {
-                        static bool IsContainedInMap(Vector toCheck, List<string> map)
-                        {
-                            return toCheck.X >= 0 && toCheck.Y >= 0 && toCheck.Y < map.Count && toCheck.X < map[toCheck.Y].Length;
-                        }
 
                         var toCheck = d.Value + nodePosition;
 
-                        return IsContainedInMap(toCheck, map)
+                        return map.IsContainedInMap(toCheck)
                             && map.GetAtPosition(toCheck) != '#';
                     }
                     )
