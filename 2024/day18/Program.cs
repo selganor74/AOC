@@ -44,7 +44,7 @@ do
         if (!map.IsContainedInMap(toCheck)) continue;
         try
         {
-            nodes[new(toCheck)].Remove(new Arc(1, new(toCheck)));
+            nodes[new(toCheck)].Remove(new Arc(1, new(corruptionPosition)));
         }
         catch { }
     }
