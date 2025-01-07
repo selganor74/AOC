@@ -29,7 +29,7 @@ var lastPath = map.DrawPath(startNode, new(mapSize), path);
 var part1 = distances[new(mapSize)];
 Console.WriteLine("Part1: " + part1);
 
-int nextFalling = 1024;
+int nextFalling = numCorrupted;
 Vector curruptionPosition;
 do
 {
