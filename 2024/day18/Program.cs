@@ -7,7 +7,7 @@ var numCorrupted = 12;
 //*/
 //* Official Input Setup
 var input = File.ReadAllLines("input.txt");
-var mapSize = new Vector(70,70);
+var mapSize = new Vector(70, 70);
 var numCorrupted = 1024;
 //*/
 
@@ -20,14 +20,39 @@ for (int y = 0; y <= mapSize.Y; y++)
 for (int i = 0; i < numCorrupted; i++)
     map.SetAtPosition(Vector.FromString(input[i]), '#');
 
-var nodes = map.ExtractNodes();
 
 Node startNode = new(new(0, 0));
-
+Node endNode = new(mapSize);
+var nodes = map.ExtractNodes();
 nodes.Dijkstra(startNode, out var distances, out var path);
-map.DrawPath(startNode, new(mapSize), path);
+var lastPath = map.DrawPath(startNode, new(mapSize), path);
 var part1 = distances[new(mapSize)];
-Console.WriteLine("part1: " + part1);
+Console.WriteLine("Part1: " + part1);
+
+int nextFalling = 1024;
+Vector curruptionPosition;
+do
+{
+    nextFalling++;
+    curruptionPosition = Vector.FromString(input[nextFalling]);
+
+    map.SetAtPosition(Vector.FromString(input[nextFalling]), '#');
+
+    if (lastPath.GetAtPosition(curruptionPosition) != 'O')
+        continue;
+
+    nodes = map.ExtractNodes();
+    nodes.Dijkstra(startNode, out distances, out path);
+    if (distances.ContainsKey(endNode))
+        lastPath = map.DrawPath(startNode, endNode, path);
+
+    Console.WriteLine("Processed corruption #:" + nextFalling);
+} while (distances.ContainsKey(endNode));
+
+var part2 = Vector.FromString(input[nextFalling]);
+// map.DrawPath(startNode, new(part2), path);
+Console.WriteLine("Part1: " + part1);
+Console.WriteLine($"Part2: {part2.X},{part2.Y}");
 
 public static class UsefulExtensions
 {
@@ -200,7 +225,7 @@ public static class UsefulExtensions
         }
     }
 
-    public static void DrawPath(this List<string> map, Node start, Node endNode, Dictionary<Node, Node> path)
+    public static List<string> DrawPath(this List<string> map, Node start, Node endNode, Dictionary<Node, Node> path)
     {
         var mapClone = map.Clone();
         var currentNode = path.Where(kv => kv.Key == endNode).First();
@@ -211,6 +236,7 @@ public static class UsefulExtensions
             currentNode = path.Where(kv => kv.Key == currentNode.Value).First();
         }
         mapClone.Dump();
+        return mapClone;
     }
 }
 
