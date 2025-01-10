@@ -242,6 +242,10 @@ public readonly record struct Vector(int X, int Y)
         West
     ];
 
+    public static IEnumerable<Vector> GetCellsInRadius(int radius) {
+        return [];
+    }
+
     public static Dictionary<char, Vector> Directions = new() {
         {'^', North},
         {'>', East},
