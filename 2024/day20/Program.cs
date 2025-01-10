@@ -8,42 +8,49 @@ map.Dump();
 var startPosition = map.FindSymbol('S');
 var endPosition = map.FindSymbol('E');
 
-var allNodes = map.ExtractNodes();
-allNodes.Dijkstra(startPosition, out var distances, out _);
+List<Cheat> cheats = FindCheats(map, nsSaved, startPosition, endPosition, 2);
 
-List<Cheat> cheats = new();
-var initialStartEndDistance = distances[endPosition];
+Console.WriteLine("Part1: " + cheats.Count);
 
-for (int y = 1; y < map.Count - 1; y++)
+static List<Cheat> FindCheats(List<string> map, int nsSaved, Vector startPosition, Vector endPosition, int cheatLength)
 {
-    for (int x = 1; x < map[y].Length - 1; x++)
+    var allNodes = map.ExtractNodes();
+    allNodes.Dijkstra(startPosition, out var distances, out _);
+
+    List<Cheat> cheats = new();
+    var initialStartEndDistance = distances[endPosition];
+
+    for (int y = 1; y < map.Count - 1; y++)
     {
-        var curr = new Vector(x, y);
-        if (distances.ContainsKey(curr)) continue;
-        foreach (var d in Vector.AllDirections)
+        for (int x = 1; x < map[y].Length - 1; x++)
         {
-            var from = curr + d;
-            if (map.GetAtPosition(from) == '#') continue;
-            foreach (var de in Vector.AllDirections.Where(q => q != d).ToList())
+            var curr = new Vector(x, y);
+            if (distances.ContainsKey(curr)) continue;
+            foreach (var d in Vector.AllDirections)
             {
-                var exit = curr + de;
-                if (map.GetAtPosition(exit) == '#') continue;
-
-                // the -2 offset is due to the two steps to enter and exit the hole !
-                var distanceSaved = Math.Abs(distances[from] - distances[exit]) - 2;
-
-                if (distanceSaved >= nsSaved )
+                var from = curr + d;
+                if (map.GetAtPosition(from) == '#') continue;
+                foreach (var de in Vector.AllDirections.Where(q => q != d).ToList())
                 {
-                    var cheat = new Cheat(curr, curr);
-                    if (!cheats.Contains(cheat))
-                        cheats.Add(cheat);
+                    var exit = curr + de;
+                    if (map.GetAtPosition(exit) == '#') continue;
+
+                    // the -2 offset is due to the two steps to enter and exit the hole !
+                    var distanceSaved = distances[from] - distances[exit] - 2;
+
+                    if (distanceSaved >= nsSaved)
+                    {
+                        var cheat = new Cheat(from, exit);
+                        if (!cheats.Contains(cheat))
+                            cheats.Add(cheat);
+                    }
                 }
             }
         }
     }
-}
 
-Console.WriteLine("Part1: " + cheats.Count);
+    return cheats;
+}
 
 public static class UsefulExtensions
 {
