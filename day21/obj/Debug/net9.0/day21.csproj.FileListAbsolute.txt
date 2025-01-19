@@ -1,0 +1,15 @@
+/home/administrator/develop/AOC/day21/bin/Debug/net9.0/day21
+/home/administrator/develop/AOC/day21/bin/Debug/net9.0/day21.deps.json
+/home/administrator/develop/AOC/day21/bin/Debug/net9.0/day21.runtimeconfig.json
+/home/administrator/develop/AOC/day21/bin/Debug/net9.0/day21.dll
+/home/administrator/develop/AOC/day21/bin/Debug/net9.0/day21.pdb
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.GeneratedMSBuildEditorConfig.editorconfig
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.AssemblyInfoInputs.cache
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.AssemblyInfo.cs
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.csproj.CoreCompileInputs.cache
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.sourcelink.json
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.dll
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/refint/day21.dll
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.pdb
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/day21.genruntimeconfig.cache
+/home/administrator/develop/AOC/day21/obj/Debug/net9.0/ref/day21.dll
